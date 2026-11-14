@@ -52,6 +52,26 @@ O projeto utilizará integração contínua (CI) para executar verificações au
 
 As ferramentas e os comandos serão definidos após a escolha das tecnologias utilizadas pelo projeto.
 
+## 6. Padrão de commits
+
+As mensagens de commit devem ser claras e indicar o tipo de alteração realizada.
+
+Utilize os seguintes prefixos:
+
+- `feat:` novas funcionalidades.
+- `fix:` correções de problemas.
+- `docs:` alterações na documentação.
+- `test:` criação ou alteração de testes.
+- `refactor:` reorganização do código.
+- `chore:` tarefas de manutenção e configuração.
+
+Exemplos:
+
+- `docs: adiciona guia de contribuição`
+- `feat: implementa deteccao de ameacas`
+- `fix: corrige processamento dos dados`
+- `test: adiciona testes de classificacao`
+
 ---
 
 **Projeto PET IDS**
