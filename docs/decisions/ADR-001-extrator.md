@@ -7,9 +7,8 @@
 - **Task:** IDS 7
 - **Depende de:** IDS 5 (estudo do dataset e do processo de geração). Sem a resposta da IDS 5
   sobre a origem dos blocos e do rótulo, esta ADR **não pode** passar de Rascunho.
-- **Evidências:** `docs/inspecao_dataset.json`, `docs/ids7_relatorio_colunas.md`,
-  `docs/verificacao_numeros_chave.md`, `scripts/inspeciona_dataset.py`,
-  `scripts/verifica_numeros_chave.py`
+- **Evidências:** `docs/inspecao_dataset.json`, `docs/verificacao_numeros_chave.json`,
+  `scripts/inspeciona_dataset.py`, `scripts/verifica_numeros_chave.py`
 
 ## Contexto
 
@@ -37,7 +36,7 @@ registros com estruturas e distribuições diferentes. Reproduzir "as 29 colunas
 | `Dataset_resumido.csv` | 55.826 | 25 | 29.546 (52,9%) | 26.280 (47,1%) |
 
 Esses totais foram **conferidos por um caminho independente** (sem pandas) e batem
-exatamente; ver `docs/verificacao_numeros_chave.md`.
+exatamente.
 
 O completo se divide em três blocos com assinaturas distintas:
 
@@ -81,7 +80,7 @@ preservados). Ele **não** é amostra aleatória nem agregação.
   C. Não há como separar "aprendeu o ataque" de "aprendeu qual sensor/bloco gerou a linha".
 - **Rede:** os CSVs usam `192.168.56.x` (Host-Only). Não há **nenhum** IP `10.0.0.x`
   (Bridge), mas há 305 ocorrências de `10.0.3.x` (`10.0.3.15` e `10.0.3.3`) que precisam
-  de explicação — ver `docs/verificacao_numeros_chave.md`.
+  de explicação.
 - O zip `dataset-pet.zip` contém **apenas os dois CSVs** — não há README, dicionário de
   colunas, script de transformação nem `eve.json` de exemplo.
 - Não há PCAP nem `eve.json` **anexados ao dataset** para validar o mapeamento.
@@ -199,7 +198,6 @@ enquanto o time/IDS 5 não confirmar qual dataset é canônico.
 - [x] Inspecionar os dois CSVs e registrar tipos, unidades e problemas
 - [x] Preencher o contrato v0 com as medições
 - [x] Verificar os números-chave por um caminho independente
-- [ ] Confirmar com o grupo parceiro as perguntas em `docs/perguntas_prioritarias.md`
 - [ ] Receber PCAP, `eve.json` de exemplo e o script de transformação/merge
 - [ ] Confirmar a origem do bloco C e como `Label` foi gerado (depende da IDS 5)
 - [ ] Decidir qual dataset é canônico e quais colunas saem do treino

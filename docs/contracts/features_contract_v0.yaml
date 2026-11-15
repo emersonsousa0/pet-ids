@@ -38,10 +38,10 @@ convencoes:
   unidade_dur: segundos, confirmado por dur == Ltime - Stime nas linhas ISO-8601.
   unidade_load: bytes/s, confirmado por Sload == sbytes/dur e Dload == dbytes/dur.
   blocos: 'A = proto nomeado + Stime=0 (22.957); B = proto nomeado + Stime preenchido (32.869);
-    C = proto numerico (312.191). Ver docs/ids7_relatorio_colunas.md.'
+    C = proto numerico (312.191).'
   bloco_presente: 'Lista os blocos (A, B, C) em que a coluna tem valores nao-sentinela em pelo menos 10%
     das linhas do bloco, ou em que a coluna e estrutural/constante do bloco. [] = constante ou ausente em
-    todos os blocos. Contagens exatas por coluna/bloco: docs/verificacao_numeros_chave.md.'
+    todos os blocos.'
 evidencias_suricata:
 - service usa o vocabulario de app_proto do Suricata (http, dns, tls, ftp, ssh, smb, rfb, smtp, telnet,
   dhcp, ntp, failed).
