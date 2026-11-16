@@ -59,7 +59,7 @@ preservados). Ele **não** é amostra aleatória nem agregação.
 
 - `service` usa o vocabulário de `app_proto` do Suricata: `http`, `dns`, `tls`, `ftp`,
   `ssh`, `smb`, `rfb`, `smtp`, `telnet`, `dhcp`, `ntp`, `failed`.
-- `state` usa `new`, `closed`, `established` — subconjunto dos valores de `flow.state`
+- `state` usa `new`, `closed`, `established` — compatível com os valores de `flow.state` (hipótese, sem eve.json de exemplo)
   do Suricata (que também emite `bypassed`).
 - As linhas com `GET`/`POST`/`OPTIONS` em `trans_depth` e URL em `res_bdy_len` têm a forma
   de um evento `http` do eve.json.
@@ -126,7 +126,7 @@ enquanto o time/IDS 5 não confirmar qual dataset é canônico.
    medida, não a do UNSW.
 5. **`dur=0` em 91,2% das linhas** e `Ltime == Stime` nas 312.191 linhas do bloco epoch.
    Um extrator ao vivo que calcule duração real produz distribuição diferente.
-6. **Oito colunas não são reproduzíveis só com o `eve.json`**: `sttl`, `swin`, `stcpb`,
+6. **Oito colunas provavelmente não são reproduzíveis só com o `eve.json` (hipótese)**: `sttl`, `swin`, `stcpb`,
    `dtcpb`, `synack`, `ackdat`, `trans_depth`, `ct_state_ttl`. Mantê-las no treino cria
    features que o ao vivo não terá (ou terá com outro significado).
 7. **Codificação de `proto` inconsistente.** O completo mistura nomes e códigos; o
@@ -150,6 +150,8 @@ enquanto o time/IDS 5 não confirmar qual dataset é canônico.
 > também tem captura de pacotes (tcpdump/tshark); parte destas colunas pode ser derivada
 > do PCAP e precisa ser confirmada.
 
+> **Hipótese:** os motivos abaixo vêm de conhecimento prévio do formato `eve.json`; nenhum `eve.json` de exemplo foi analisado até agora.
+
 | Coluna | Classificação | Motivo | Alternativa |
 |---|---|---|---|
 | `sttl` | `indisponivel_no_eve` | `flow` do eve.json não expõe TTL | PCAP/tshark (TODO confirmar) |
@@ -163,7 +165,7 @@ enquanto o time/IDS 5 não confirmar qual dataset é canônico.
 
 ## Diferença entre completo e resumido
 
-- **Relação:** o resumido é subconjunto linha a linha do completo (mesma ordem),
+- **Relação:** o resumido é subconjunto linha a linha do completo (mesma ordem; verificado nas 25 colunas comuns, 0 divergências em 55.826 linhas, ver `docs/comparacao_completo_resumido.json`),
   restrito às linhas com `proto` nomeado (A+B): 55.826 = 22.957 + 32.869.
 - **Colunas:** o resumido perde `sttl`, `swin`, `stcpb`, `dtcpb` (todas zero em A/B).
   As 25 restantes mantêm nome e ordem.

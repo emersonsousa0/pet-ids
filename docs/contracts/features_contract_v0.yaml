@@ -13,6 +13,8 @@
 # Ele ainda NAO prova que o extrator ao vivo reproduz estas colunas.
 version: v0
 status: draft
+dtype_semantica: 'dtype_csv = tipo como o CSV chega (medido); dtype_alvo = tipo esperado apos normalizacao/limpeza. Valores de dtype_alvo com parenteses ainda precisam de revisao.'
+eve_field_status_geral: 'hipotese: nenhum eve_field foi comprovado com eve.json de exemplo. A certeza citada nas observacoes vale para a medicao no CSV, nao para o mapeamento no eve.json. O campo origem (flow/http) tambem e hipotese pelo mesmo motivo.'
 extractor: suricata
 extractor_version: TODO
 ruleset_version: TODO
@@ -21,6 +23,7 @@ dataset_version: TODO
 data_da_medicao: '2026-11-15'
 fonte_das_medicoes: scripts/inspeciona_dataset.py + docs/inspecao_dataset.json
 verificacao_independente: scripts/verifica_numeros_chave.py + docs/verificacao_numeros_chave.json
+comparacao_completo_resumido: scripts/compara_resumido_ab.py + docs/comparacao_completo_resumido.json
 amostra_medida:
   Dataset_completo.csv:
     linhas: 368017
@@ -45,7 +48,7 @@ convencoes:
 evidencias_suricata:
 - service usa o vocabulario de app_proto do Suricata (http, dns, tls, ftp, ssh, smb, rfb, smtp, telnet,
   dhcp, ntp, failed).
-- state usa new/closed/established, subconjunto dos valores de flow.state do Suricata.
+- state usa new/closed/established, compativel com os valores de flow.state do Suricata (hipotese, sem eve.json de exemplo).
 - As linhas com metodo/URL em trans_depth/res_bdy_len tem a forma de um evento http do eve.json.
 - Os timestamps ISO-8601 tem o formato de datetime do Python com fuso (+00:00), consistente com transformacao
   de flow.start/flow.end.
@@ -124,11 +127,14 @@ features:
 - name: src_ip
   dataset_column: srcip
   bloco_presente: [A, B, C]
-  dtype: string
+  dtype_csv: "string (categorica, sentinela '0')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: string
   unit: none
   description: IP de origem (IPv4 ou IPv6)
   origem: flow
   eve_field: src_ip
+  eve_field_status: hipotese
   como_obter: direto
   uso: identificador
   observacao: certeza alta (campo comum do eve.json). 23 valores unicos; '0' e sentinela (8.424 linhas);
@@ -144,11 +150,13 @@ features:
 - name: src_port
   dataset_column: sport
   bloco_presente: [A, B, C]
-  dtype: int64
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
   unit: none
   description: Porta de origem
   origem: flow
   eve_field: src_port
+  eve_field_status: hipotese
   como_obter: direto
   uso: identificador
   observacao: 'certeza alta. Lido como float no CSV (ex.: 62735.0). 0.0 e sentinela em 145.251 linhas
@@ -164,11 +172,14 @@ features:
 - name: dst_ip
   dataset_column: dstip
   bloco_presente: [A, B, C]
-  dtype: string
+  dtype_csv: "string (categorica, sentinela '0')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: string
   unit: none
   description: IP de destino (IPv4 ou IPv6)
   origem: flow
   eve_field: dest_ip
+  eve_field_status: hipotese
   como_obter: direto
   uso: identificador
   observacao: certeza alta. 47 valores unicos; '0' e sentinela (8.424 linhas); inclui IPv6 e 224.0.0.252
@@ -184,11 +195,13 @@ features:
 - name: dst_port
   dataset_column: dsport
   bloco_presente: [A, B, C]
-  dtype: int64
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
   unit: none
   description: Porta de destino
   origem: flow
   eve_field: dest_port
+  eve_field_status: hipotese
   como_obter: direto
   uso: decidir
   observacao: certeza alta. 0.0 e sentinela em 39,5% das linhas. Risco de o modelo decorar o cenario do
@@ -204,11 +217,14 @@ features:
 - name: stime
   dataset_column: Stime
   bloco_presente: [B, C]
-  dtype: string (misto)
+  dtype_csv: "misto (object): 91.1% numerico, 8.9% ISO-8601, 32869 texto (ex.: '2025-08-20 16:27:02.544289+00:00')"
+  dtype_csv_resumido: "string ISO-8601"
+  dtype_alvo: datetime
   unit: s (epoch Unix) ou ISO-8601
   description: Inicio do fluxo/registro
   origem: flow
   eve_field: flow.start
+  eve_field_status: hipotese
   como_obter: converter
   uso: identificador
   observacao: 'certeza alta para flow.start. MEDIDO: 312.191 linhas em epoch (segundos, 6 casas), 32.869
@@ -224,11 +240,14 @@ features:
 - name: ltime
   dataset_column: Ltime
   bloco_presente: [B, C]
-  dtype: string (misto)
+  dtype_csv: "misto (object): 91.1% numerico, 8.9% ISO-8601, 32672 texto (ex.: '2025-08-20 16:27:02.544289+00:00')"
+  dtype_csv_resumido: "string ISO-8601"
+  dtype_alvo: datetime
   unit: s (epoch Unix) ou ISO-8601
   description: Fim do fluxo/registro
   origem: flow
   eve_field: flow.end
+  eve_field_status: hipotese
   como_obter: converter
   uso: identificador
   observacao: 'certeza alta para flow.end. MEDIDO: Ltime == Stime em 312.584 de 344.863 linhas comparaveis
@@ -245,11 +264,14 @@ features:
 - name: proto
   dataset_column: proto
   bloco_presente: [A, B, C]
-  dtype: 'string (misto: nome e codigo)'
+  dtype_csv: "misto (object): 84.8% numerico, 55830 texto (ex.: 'TCP')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: string
   unit: none
   description: Protocolo de transporte
   origem: flow
   eve_field: proto
+  eve_field_status: hipotese
   como_obter: converter
   uso: feature
   observacao: certeza alta (eve.json usa 'TCP', 'UDP', ...). POREM 84,8% das linhas trazem codigo numerico
@@ -266,11 +288,14 @@ features:
 - name: state
   dataset_column: state
   bloco_presente: [B]
-  dtype: string (categorica)
+  dtype_csv: "string (categorica, sentinela '0')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: string
   unit: none
   description: Estado do fluxo
   origem: flow
   eve_field: flow.state
+  eve_field_status: hipotese
   como_obter: direto
   uso: feature
   observacao: 'certeza alta: new/closed/established coincidem com flow.state do Suricata (que tambem emite
@@ -286,11 +311,14 @@ features:
 - name: service
   dataset_column: service
   bloco_presente: [A, B]
-  dtype: string (categorica)
+  dtype_csv: "string (categorica, sentinela '0')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: string
   unit: none
   description: Servico / protocolo de aplicacao
   origem: flow
   eve_field: app_proto
+  eve_field_status: hipotese
   como_obter: direto
   uso: feature
   observacao: 'certeza alta: o vocabulario (http, dns, tls, ftp, ssh, smb, rfb, smtp, telnet, dhcp, ntp)
@@ -307,11 +335,13 @@ features:
 - name: dur
   dataset_column: dur
   bloco_presente: [B]
-  dtype: float64
+  dtype_csv: "float64 (texto)"
+  dtype_alvo: float64
   unit: s
   description: Duracao do fluxo
   origem: flow
   eve_field: flow.end - flow.start
+  eve_field_status: hipotese
   como_obter: derivada
   uso: feature
   observacao: 'UNIDADE CONFIRMADA NOS DADOS: dur == Ltime - Stime em 100% das 32.672 linhas ISO (segundos).
@@ -327,12 +357,14 @@ features:
     pct_linhas_zero_completo: 91.229
 - name: sbytes
   dataset_column: sbytes
-  bloco_presente: [B]
-  dtype: int64
+  bloco_presente: [B]  # C fora: 3,30% nao zero (10.308 de 312.191), abaixo do limite de 10%
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
   unit: bytes
   description: Bytes origem -> destino
   origem: flow
   eve_field: flow.bytes_toserver
+  eve_field_status: hipotese
   como_obter: direto
   uso: feature
   observacao: certeza alta. Inteiro gravado como float. 88,3% das linhas tem 0 (ausencia de fluxo ou fluxo
@@ -348,11 +380,13 @@ features:
 - name: dbytes
   dataset_column: dbytes
   bloco_presente: [B]
-  dtype: int64
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
   unit: bytes
   description: Bytes destino -> origem
   origem: flow
   eve_field: flow.bytes_toclient
+  eve_field_status: hipotese
   como_obter: direto
   uso: feature
   observacao: certeza alta. 96,0% zeros; maximo 211.896.905 B (~202 MiB).
@@ -367,11 +401,13 @@ features:
 - name: spkts
   dataset_column: Spkts
   bloco_presente: [B, C]
-  dtype: int64
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
   unit: packets
   description: Pacotes origem -> destino
   origem: flow
   eve_field: flow.pkts_toserver
+  eve_field_status: hipotese
   como_obter: direto
   uso: feature
   observacao: certeza alta. 6,2% zeros (linhas sem fluxo). No bloco C vale sempre 1 (registro por pacote?).
@@ -386,11 +422,13 @@ features:
 - name: dpkts
   dataset_column: Dpkts
   bloco_presente: [B]
-  dtype: int64
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
   unit: packets
   description: Pacotes destino -> origem
   origem: flow
   eve_field: flow.pkts_toclient
+  eve_field_status: hipotese
   como_obter: direto
   uso: feature
   observacao: certeza alta. 96,0% zeros; no bloco C vale sempre 0.
@@ -405,11 +443,13 @@ features:
 - name: sload
   dataset_column: Sload
   bloco_presente: [B]
-  dtype: float64
+  dtype_csv: "float64 (texto)"
+  dtype_alvo: float64
   unit: bytes/s
   description: Taxa de bytes origem -> destino
   origem: derivada
   eve_field: sbytes / dur
+  eve_field_status: hipotese
   como_obter: derivada
   uso: feature
   observacao: 'UNIDADE MEDIDA: Sload == sbytes/dur em 100% das 32.279 linhas com dur>0. E bytes/s, NAO
@@ -426,11 +466,13 @@ features:
 - name: dload
   dataset_column: Dload
   bloco_presente: [B]
-  dtype: float64
+  dtype_csv: "float64 (texto)"
+  dtype_alvo: float64
   unit: bytes/s
   description: Taxa de bytes destino -> origem
   origem: derivada
   eve_field: dbytes / dur
+  eve_field_status: hipotese
   como_obter: derivada
   uso: feature
   observacao: 'UNIDADE MEDIDA: Dload == dbytes/dur em 100% das 32.279 linhas com dur>0. E bytes/s, NAO
@@ -445,12 +487,14 @@ features:
     pct_linhas_zero_completo: 96.064
 - name: smeansz
   dataset_column: smeansz
-  bloco_presente: [B]
-  dtype: float64
+  bloco_presente: [B]  # C fora: 3,30% nao zero (10.308 de 312.191), abaixo do limite de 10%
+  dtype_csv: "float64 (texto)"
+  dtype_alvo: float64
   unit: bytes/pacote
   description: Tamanho medio dos pacotes da origem
   origem: derivada
   eve_field: sbytes / Spkts
+  eve_field_status: hipotese
   como_obter: derivada
   uso: feature
   observacao: 'MEDIDO: == sbytes/Spkts em 100% das 345.060 linhas com Spkts>0.'
@@ -465,11 +509,13 @@ features:
 - name: dmeansz
   dataset_column: dmeansz
   bloco_presente: [B]
-  dtype: float64
+  dtype_csv: "float64 (texto)"
+  dtype_alvo: float64
   unit: bytes/pacote
   description: Tamanho medio dos pacotes do destino
   origem: derivada
   eve_field: dbytes / Dpkts
+  eve_field_status: hipotese
   como_obter: derivada
   uso: feature
   observacao: 'MEDIDO: == dbytes/Dpkts em 100% das 14.644 linhas com Dpkts>0.'
@@ -484,11 +530,13 @@ features:
 - name: is_sm_ips_ports
   dataset_column: is_sm_ips_ports
   bloco_presente: []
-  dtype: int64
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
   unit: boolean
   description: 1 se IP e porta de origem sao iguais aos de destino
   origem: derivada
   eve_field: src_ip == dest_ip and src_port == dest_port
+  eve_field_status: hipotese
   como_obter: derivada
   uso: descartar
   observacao: CONSTANTE 0 em todas as 368.017 linhas (zero variancia). Descartar.
@@ -503,7 +551,9 @@ features:
 - name: ct_state_ttl
   dataset_column: ct_state_ttl
   bloco_presente: [B]
-  dtype: string (categorica)
+  dtype_csv: "misto (object): 91.7% numerico, 30470 texto (ex.: 'closed')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: string
   unit: none
   description: Estado TCP detalhado (NAO e contagem por faixa de TTL)
   origem: desconhecida
@@ -524,7 +574,8 @@ features:
 - name: sttl
   dataset_column: sttl
   bloco_presente: [C]
-  dtype: float64
+  dtype_csv: "misto (object): 100.0% numerico, 4 texto (ex.: '64,52')"
+  dtype_alvo: float64
   unit: hops (TTL)
   description: TTL da origem
   origem: desconhecida
@@ -545,7 +596,8 @@ features:
 - name: swin
   dataset_column: swin
   bloco_presente: [C]
-  dtype: float64
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: float64
   unit: bytes (janela TCP; provavel)
   description: Janela TCP anunciada pela origem
   origem: desconhecida
@@ -565,12 +617,13 @@ features:
 - name: stcpb
   dataset_column: stcpb
   bloco_presente: [C]
-  dtype: float64
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: float64
   unit: 'TODO: confirmar'
   description: Numero de sequencia TCP base da origem (definicao UNSW, nao confirmada)
   origem: desconhecida
   eve_field: TODO
-  como_obter: indisponivel_no_eve
+  como_obter: nao_reproduzivel
   uso: decidir
   observacao: ZERO em 100% dos blocos A e B. No bloco C, 83% zeros e o restante 1, 449, 77... — nao parece
     numero de sequencia. Nao reproduzivel a partir do eve.json.
@@ -585,12 +638,13 @@ features:
 - name: dtcpb
   dataset_column: dtcpb
   bloco_presente: [C]
-  dtype: float64
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: float64
   unit: 'TODO: confirmar'
   description: Numero de sequencia TCP base do destino (definicao UNSW, nao confirmada)
   origem: desconhecida
   eve_field: TODO
-  como_obter: indisponivel_no_eve
+  como_obter: nao_reproduzivel
   uso: decidir
   observacao: ZERO em A/B. No bloco C, maximo 3.839.919.962 (~2^32), o que sugere numero de sequencia
     em parte das linhas, mas stcpb == dtcpb em 94,4% (incompativel com seq independente). Nao reproduzivel
@@ -606,7 +660,9 @@ features:
 - name: synack
   dataset_column: synack
   bloco_presente: [B, C]
-  dtype: 'string (misto: 0/True/False)'
+  dtype_csv: "misto (object): 46.2% numerico, 53.8% bool, 197892 texto (ex.: 'True')"
+  dtype_csv_resumido: "bool (texto)"
+  dtype_alvo: boolean
   unit: none (booleano)
   description: SYN -> SYN-ACK (no UNSW seria segundos)
   origem: desconhecida
@@ -626,7 +682,9 @@ features:
 - name: ackdat
   dataset_column: ackdat
   bloco_presente: [B, C]
-  dtype: 'string (misto: 0/True/False)'
+  dtype_csv: "misto (object): 50.6% numerico, 49.4% bool, 181740 texto (ex.: 'True')"
+  dtype_csv_resumido: "bool (texto)"
+  dtype_alvo: boolean
   unit: none (booleano)
   description: SYN-ACK -> ACK (no UNSW seria segundos)
   origem: desconhecida
@@ -646,11 +704,14 @@ features:
 - name: trans_depth
   dataset_column: trans_depth
   bloco_presente: [A]
-  dtype: 'string (misto: 0 + metodo HTTP)'
+  dtype_csv: "misto (object): 94.2% numerico, 21233 texto (ex.: 'GET')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: 'TODO: definir apos corrigir a transformacao'
   unit: 'TODO: confirmar (sem valor numerico medido)'
   description: 'Profundidade da transacao HTTP (esperado: count)'
   origem: http
   eve_field: http.http_method (conteudo atual); TODO campo de profundidade
+  eve_field_status: hipotese
   como_obter: nao_reproduzivel
   uso: decidir
   observacao: 'BUG: 21.233 linhas tem ''GET'', ''POST'', ''OPTIONS'', ''PROPFIND'', ''HEAD'' ou ''AHKK'';
@@ -667,11 +728,14 @@ features:
 - name: res_bdy_len
   dataset_column: res_bdy_len
   bloco_presente: [A]
-  dtype: 'string (misto: 0 + URL)'
+  dtype_csv: "misto (object): 94.2% numerico, 21233 texto (ex.: '/dav/')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: 'TODO: definir apos corrigir a transformacao'
   unit: 'TODO: confirmar (sem valor numerico medido; esperado: bytes)'
   description: Tamanho do corpo da resposta HTTP
   origem: http
   eve_field: http.url (conteudo atual); http.length (candidato ao significado, certeza baixa)
+  eve_field_status: hipotese
   como_obter: confirmar
   uso: decidir
   observacao: 'BUG: 21.233 linhas contem a URL (''/dav/'', ''/robots.txt'', ...); o resto e 0. Nenhum
@@ -687,7 +751,8 @@ features:
 - name: label
   dataset_column: Label
   bloco_presente: [A, B, C]
-  dtype: int64
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
   unit: none
   description: 'Rotulo binario: 1 = ataque, 0 = benigno (fonte: descricao do Kaggle). Como foi gerado: TODO: confirmar.'
   origem: desconhecida
