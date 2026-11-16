@@ -104,12 +104,15 @@ def infer_dtype(s: pd.Series, expected_numeric: bool = False) -> tuple[str, dict
         parts.append(f"{len(rest)} texto (ex.: {rest.iloc[0]!r})")
     info["formato"] = "misto"
 
-    if not expected_numeric:
-        # Categorica com sentinela '0' e normal; nao e "erro de tipo".
-        rest_counts = rest.value_counts()
-        if (num.fillna(0) == 0).all() and not rest.empty and rest.nunique() <= 50:
-            info["formato"] = "categorica_com_sentinela"
-            return "string (categorica, sentinela '0')", info
+    # Categorica com sentinela '0' e normal; nao e "erro de tipo".
+    if (
+        not expected_numeric
+        and (num.fillna(0) == 0).all()
+        and not rest.empty
+        and rest.nunique() <= 50
+    ):
+        info["formato"] = "categorica_com_sentinela"
+        return "string (categorica, sentinela '0')", info
 
     return "misto (object): " + ", ".join(parts), info
 
@@ -197,7 +200,7 @@ def block_profile(df: pd.DataFrame, blocks: pd.Series) -> list[dict]:
     for name, b in df.groupby(blocks, sort=True):
         row = {
             "bloco": name,
-            "n_linhas": int(len(b)),
+            "n_linhas": len(b),
             "pct_do_total": round(100.0 * len(b) / len(df), 3),
             "label_1": int((b["Label"] == "1").sum()),
             "pct_label_1": round(100.0 * (b["Label"] == "1").mean(), 3),
@@ -525,9 +528,8 @@ def print_resumo(full_info: dict, res_info: dict, comp: dict) -> None:
 
     print("\nCOLUNAS COM TIPO MISTO OU TEXTO INDEVIDO (completo):")
     for c, st in full_info["estatisticas_por_coluna"].items():
-        if c in EXPECTED_NUMERIC or c == "proto":
-            if "misto" in st["dtype_inferido"]:
-                print(f"  {c:16s} {st['dtype_inferido']}")
+        if (c in EXPECTED_NUMERIC or c == "proto") and "misto" in st["dtype_inferido"]:
+            print(f"  {c:16s} {st['dtype_inferido']}")
 
     q = full_info["qualidade"]
     print("\nPROBLEMAS DE QUALIDADE (completo):")
