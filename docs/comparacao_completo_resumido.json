@@ -1,0 +1,145 @@
+{
+  "linhas": {
+    "completo": 368017,
+    "bloco_c": 312191,
+    "ab": 55826,
+    "resumido": 55826
+  },
+  "sem_par": {
+    "ab": 0,
+    "resumido": 0
+  },
+  "colunas_comuns": [
+    "srcip",
+    "sport",
+    "dstip",
+    "dsport",
+    "proto",
+    "state",
+    "dur",
+    "sbytes",
+    "dbytes",
+    "service",
+    "Sload",
+    "Dload",
+    "Spkts",
+    "Dpkts",
+    "smeansz",
+    "dmeansz",
+    "trans_depth",
+    "res_bdy_len",
+    "Stime",
+    "Ltime",
+    "synack",
+    "ackdat",
+    "is_sm_ips_ports",
+    "ct_state_ttl",
+    "Label"
+  ],
+  "so_completo": [
+    "sttl",
+    "swin",
+    "stcpb",
+    "dtcpb"
+  ],
+  "so_resumido": [],
+  "mesma_ordem": true,
+  "por_coluna": {
+    "srcip": {
+      "igual": 55826
+    },
+    "sport": {
+      "igual": 55344,
+      "vazio_vs_zero": 482
+    },
+    "dstip": {
+      "igual": 55826
+    },
+    "dsport": {
+      "igual": 55344,
+      "vazio_vs_zero": 482
+    },
+    "proto": {
+      "igual": 55826
+    },
+    "state": {
+      "vazio_vs_zero": 23154,
+      "igual": 32672
+    },
+    "dur": {
+      "vazio_vs_zero": 23154,
+      "igual": 32672
+    },
+    "sbytes": {
+      "vazio_vs_zero": 22957,
+      "igual": 32869
+    },
+    "dbytes": {
+      "vazio_vs_zero": 22957,
+      "igual": 32869
+    },
+    "service": {
+      "vazio_vs_zero": 38092,
+      "igual": 17734
+    },
+    "Sload": {
+      "vazio_vs_zero": 23154,
+      "igual": 32672
+    },
+    "Dload": {
+      "vazio_vs_zero": 23154,
+      "igual": 32672
+    },
+    "Spkts": {
+      "vazio_vs_zero": 22957,
+      "igual": 32869
+    },
+    "Dpkts": {
+      "vazio_vs_zero": 22957,
+      "igual": 32869
+    },
+    "smeansz": {
+      "vazio_vs_zero": 22957,
+      "igual": 32869
+    },
+    "dmeansz": {
+      "vazio_vs_zero": 22957,
+      "igual": 32869
+    },
+    "trans_depth": {
+      "igual": 21233,
+      "vazio_vs_zero": 34593
+    },
+    "res_bdy_len": {
+      "igual": 21233,
+      "vazio_vs_zero": 34593
+    },
+    "Stime": {
+      "vazio_vs_zero": 22957,
+      "igual": 32869
+    },
+    "Ltime": {
+      "vazio_vs_zero": 23154,
+      "igual": 32672
+    },
+    "synack": {
+      "vazio_vs_zero": 25356,
+      "igual": 30470
+    },
+    "ackdat": {
+      "vazio_vs_zero": 41508,
+      "igual": 14318
+    },
+    "is_sm_ips_ports": {
+      "igual": 55826
+    },
+    "ct_state_ttl": {
+      "vazio_vs_zero": 25356,
+      "igual": 30470
+    },
+    "Label": {
+      "igual": 55826
+    }
+  },
+  "amostras_divergencia": {}
+}
