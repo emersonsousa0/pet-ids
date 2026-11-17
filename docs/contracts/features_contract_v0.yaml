@@ -1,0 +1,774 @@
+# Contrato de features v0 — PET/IDS 7
+# Medido em Dataset_completo.csv (368.017 x 29) e Dataset_resumido.csv (55.826 x 25).
+# Fonte das medicoes: scripts/inspeciona_dataset.py e docs/inspecao_dataset.json.
+# Nomes de coluna herdados do UNSW-NB15, mas as definicoes do UNSW NAO foram assumidas:
+# cada unidade abaixo foi medida ou marcada como TODO: confirmar.
+#
+# origem:     flow | alert | http | derivada | desconhecida
+# como_obter: direto | converter | derivada | calcular_janela | indisponivel_no_eve | nao_reproduzivel | confirmar
+# uso:        feature | rotulo | identificador | descartar | decidir
+# certeza (em observacao): alta | media | baixa | nao verificado
+#
+# ATENCAO: este arquivo descreve o dataset COMO ELE ESTA, inclusive os defeitos.
+# Ele ainda NAO prova que o extrator ao vivo reproduz estas colunas.
+version: v0
+status: draft
+dtype_semantica: 'dtype_csv = tipo como o CSV chega (medido); dtype_alvo = tipo esperado apos normalizacao/limpeza. Valores de dtype_alvo com parenteses ainda precisam de revisao.'
+eve_field_status_geral: 'hipotese: nenhum eve_field foi comprovado com eve.json de exemplo. A certeza citada nas observacoes vale para a medicao no CSV, nao para o mapeamento no eve.json. O campo origem (flow/http) tambem e hipotese pelo mesmo motivo.'
+extractor: suricata
+extractor_version: TODO
+ruleset_version: TODO
+dataset: rebsonramalho/network-threat-detection-dataset
+dataset_version: TODO
+data_da_medicao: '2026-11-15'
+fonte_das_medicoes: scripts/inspeciona_dataset.py + docs/inspecao_dataset.json
+verificacao_independente: scripts/verifica_numeros_chave.py + docs/verificacao_numeros_chave.json
+comparacao_completo_resumido: scripts/compara_resumido_ab.py + docs/comparacao_completo_resumido.json
+amostra_medida:
+  Dataset_completo.csv:
+    linhas: 368017
+    colunas: 29
+  Dataset_resumido.csv:
+    linhas: 55826
+    colunas: 25
+  observacao: Nenhuma celula vazia no completo. No resumido, vazio representa ausencia (NaN); no completo
+    a ausencia foi preenchida com 0/'0'.
+convencoes:
+  certeza: 'Quando aplicavel, a certeza do mapeamento para o eve.json esta escrita no inicio da observacao:
+    alta, media, baixa, nao verificado.'
+  sentinela: O valor 0 (ou '0', '0.0') e usado como ausencia em varias colunas; nao e um zero medido.
+  zeros: Em colunas textuais, zeros_completo conta o literal '0' (sentinela), nao um zero numerico medido.
+  unidade_dur: segundos, confirmado por dur == Ltime - Stime nas linhas ISO-8601.
+  unidade_load: bytes/s, confirmado por Sload == sbytes/dur e Dload == dbytes/dur.
+  blocos: 'A = proto nomeado + Stime=0 (22.957); B = proto nomeado + Stime preenchido (32.869);
+    C = proto numerico (312.191).'
+  bloco_presente: 'Lista os blocos (A, B, C) em que a coluna tem valores nao-sentinela em pelo menos 10%
+    das linhas do bloco, ou em que a coluna e estrutural/constante do bloco. [] = constante ou ausente em
+    todos os blocos.'
+evidencias_suricata:
+- service usa o vocabulario de app_proto do Suricata (http, dns, tls, ftp, ssh, smb, rfb, smtp, telnet,
+  dhcp, ntp, failed).
+- state usa new/closed/established, compativel com os valores de flow.state do Suricata (hipotese, sem eve.json de exemplo).
+- As linhas com metodo/URL em trans_depth/res_bdy_len tem a forma de um evento http do eve.json.
+- Os timestamps ISO-8601 tem o formato de datetime do Python com fuso (+00:00), consistente com transformacao
+  de flow.start/flow.end.
+- 'CONTRA-EVIDENCIA: 84,8% das linhas tem proto numerico (6/17/1/2), incompativel com o proto textual
+  do eve.json, e Spkts=1/Dpkts=0. Isso indica que o completo concatena uma fonte diferente (bloco C).'
+problemas_na_amostra:
+- trans_depth contem metodo HTTP em 21.233 linhas e res_bdy_len contem URL nas mesmas 21.233 linhas (94,2%
+  dos valores nao sao 0).
+- Nao ha nenhum valor numerico > 0 em trans_depth nem em res_bdy_len; as duas colunas, como estao, nao
+  servem como features numericas.
+- 'O completo mistura 3 blocos: A (22.957 linhas, HTTP sem metricas de fluxo, 10,6% Label=1), B (32.869,
+  fluxo real, 82,5% Label=1) e C (312.191, proto numerico, Spkts=1, Dpkts=0, dur=0, state=0, 98,4% Label=1).'
+- O bloco C, com 84,8% das linhas, tem apenas 33.975 5-tuplas unicas e todas as features de fluxo zeradas
+  ou constantes (Spkts=1, Dpkts=0, dur=0).
+- 91,2% das linhas tem dur=0; 6,2% tem todas as features de fluxo zero (bloco A).
+- 'Ltime == Stime em todas as 312.191 linhas do bloco epoch: nesse bloco Ltime nao e fim de fluxo.'
+- '393 linhas tem dur=0 e Sload != 0; nelas Sload == sbytes (divisao nao aplicada). Ex.: IPv6-ICMP, 70
+  bytes, Sload=70.'
+- Sload/Dload sao bytes/s (nao bits/s como no UNSW).
+- ct_state_ttl carrega nomes de estado TCP (syn_sent, fin_wait2, close_wait...), nao uma contagem por
+  TTL.
+- synack e ackdat sao booleanos (0/True/False), nao tempos em segundos; no resumido so existe True/vazio.
+- sttl, swin, stcpb e dtcpb sao zero em 100% dos blocos A e B; so tem valores no bloco C.
+- stcpb == dtcpb em 94,4% das linhas, o que e incompativel com numeros de sequencia independentes.
+- is_sm_ips_ports e constante 0 em 368.017 linhas.
+- 4 linhas tem varios valores no mesmo campo (srcip='a,b', dstip='b,a', sttl='64,52', proto='1,17').
+- 5.572 linhas sao duplicatas exatas; 5.567 delas estao no bloco A.
+- proto mistura nomes (TCP/UDP) e codigos (6/17/1) na mesma coluna.
+- Stime mistura epoch e ISO-8601 na mesma coluna; Ltime tambem.
+- Label=1 em 91,5% do completo, mas 52,9% no resumido; a proporcao depende do bloco.
+- 'SEMANTICA DO LABEL (fonte: descricao do Kaggle): 1 = ataque, 0 = benigno. Os totais conferem com a
+  medicao: completo 336.735 ataque / 31.282 benigno; resumido 29.546 / 26.280.'
+- 'O dataset so tem Label binario: NAO permite analise por tipo de ataque (classe/categoria).'
+- 'HIPOTESE (nao fato) sobre o bloco C: ele viria da captura de pacotes (tcpdump/tshark, 1 pacote por
+  linha), nao do eve.json do Suricata. O ambiente teria Suricata + captura + merge temporal em Python.
+  TODO: confirmar com o grupo.'
+- 'Rede: os CSVs usam 192.168.56.x (Host-Only; 7 IPs distintos). NAO ha nenhum IP 10.0.0.x. Ha, porem,
+  305 ocorrencias de 10.0.3.x (10.0.3.15 e 10.0.3.3) que precisam de explicacao, pois a faixa 10.0.0.x
+  (Bridge) teria sido excluida.'
+nao_reproduziveis:
+# NOTA: "nao reproduzivel" aqui significa NAO reproduzivel SO com o eve.json. O ambiente informado
+# tambem tem captura de pacotes (tcpdump/tshark) e merge temporal em Python; parte destas colunas
+# pode ser derivada do PCAP e precisa ser confirmada (TODO: confirmar com o grupo).
+- coluna: sttl
+  motivo: O evento flow do eve.json nao expoe TTL. Exigiria PCAP (ou event_type packet com bytes);
+    via tcpdump/tshark e derivavel em principio (TODO confirmar).
+  classificacao: indisponivel_no_eve
+- coluna: swin
+  motivo: O evento flow nao expoe janela TCP; o objeto tcp do eve.json traz flags/estado, nao window.
+    Exigiria PCAP; via tshark e derivavel em principio (TODO confirmar).
+  classificacao: indisponivel_no_eve
+- coluna: stcpb
+  motivo: Nao ha seq base no flow do eve.json e os valores do dataset (0/1/449...) nao parecem numero
+    de sequencia. Exigiria PCAP/tshark (TODO confirmar) e a unidade continua desconhecida.
+  classificacao: nao_reproduzivel
+- coluna: dtcpb
+  motivo: Mesmo caso de stcpb; 94,4% das linhas tem stcpb == dtcpb. Exigiria PCAP/tshark (TODO confirmar).
+  classificacao: nao_reproduzivel
+- coluna: synack
+  motivo: E o intervalo SYN->SYN-ACK, que nao existe no eve.json (booleano no dataset). Exigiria
+    timestamps de pacote (PCAP/tshark), derivavel em principio (TODO confirmar).
+  classificacao: nao_reproduzivel
+- coluna: ackdat
+  motivo: E o intervalo SYN-ACK->ACK, que nao existe no eve.json (booleano no dataset). Exigiria
+    timestamps de pacote (PCAP/tshark), derivavel em principio (TODO confirmar).
+  classificacao: nao_reproduzivel
+- coluna: trans_depth
+  motivo: Suricata nao expoe profundidade de transacao HTTP; alem disso a coluna do dataset contem o metodo
+    HTTP.
+  classificacao: nao_reproduzivel
+- coluna: ct_state_ttl
+  motivo: A coluna do dataset contem estado TCP detalhado; nao ha campo equivalente no eve.json nem a
+    definicao de contagem por TTL do UNSW pode ser aplicada.
+  classificacao: nao_reproduzivel
+features:
+- name: src_ip
+  dataset_column: srcip
+  bloco_presente: [A, B, C]
+  dtype_csv: "string (categorica, sentinela '0')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: string
+  unit: none
+  description: IP de origem (IPv4 ou IPv6)
+  origem: flow
+  eve_field: src_ip
+  eve_field_status: hipotese
+  como_obter: direto
+  uso: identificador
+  observacao: certeza alta (campo comum do eve.json). 23 valores unicos; '0' e sentinela (8.424 linhas);
+    inclui IPv6 link-local.
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 0
+    pct_nulos_resumido: 0.0
+    infinitos: 0
+    zeros_completo: 8424
+    pct_linhas_zero_completo: 2.289
+- name: src_port
+  dataset_column: sport
+  bloco_presente: [A, B, C]
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
+  unit: none
+  description: Porta de origem
+  origem: flow
+  eve_field: src_port
+  eve_field_status: hipotese
+  como_obter: direto
+  uso: identificador
+  observacao: 'certeza alta. Lido como float no CSV (ex.: 62735.0). 0.0 e sentinela em 145.251 linhas
+    (ICMP/sem porta); no resumido, 482 viram vazio.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 482
+    pct_nulos_resumido: 0.863
+    infinitos: 0
+    zeros_completo: 145251
+    pct_linhas_zero_completo: 39.469
+- name: dst_ip
+  dataset_column: dstip
+  bloco_presente: [A, B, C]
+  dtype_csv: "string (categorica, sentinela '0')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: string
+  unit: none
+  description: IP de destino (IPv4 ou IPv6)
+  origem: flow
+  eve_field: dest_ip
+  eve_field_status: hipotese
+  como_obter: direto
+  uso: identificador
+  observacao: certeza alta. 47 valores unicos; '0' e sentinela (8.424 linhas); inclui IPv6 e 224.0.0.252
+    (LLMNR).
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 0
+    pct_nulos_resumido: 0.0
+    infinitos: 0
+    zeros_completo: 8424
+    pct_linhas_zero_completo: 2.289
+- name: dst_port
+  dataset_column: dsport
+  bloco_presente: [A, B, C]
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
+  unit: none
+  description: Porta de destino
+  origem: flow
+  eve_field: dest_port
+  eve_field_status: hipotese
+  como_obter: direto
+  uso: decidir
+  observacao: certeza alta. 0.0 e sentinela em 39,5% das linhas. Risco de o modelo decorar o cenario do
+    laboratorio.
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 482
+    pct_nulos_resumido: 0.863
+    infinitos: 0
+    zeros_completo: 145251
+    pct_linhas_zero_completo: 39.469
+- name: stime
+  dataset_column: Stime
+  bloco_presente: [B, C]
+  dtype_csv: "misto (object): 91.1% numerico, 8.9% ISO-8601, 32869 texto (ex.: '2025-08-20 16:27:02.544289+00:00')"
+  dtype_csv_resumido: "string ISO-8601"
+  dtype_alvo: datetime
+  unit: s (epoch Unix) ou ISO-8601
+  description: Inicio do fluxo/registro
+  origem: flow
+  eve_field: flow.start
+  eve_field_status: hipotese
+  como_obter: converter
+  uso: identificador
+  observacao: 'certeza alta para flow.start. MEDIDO: 312.191 linhas em epoch (segundos, 6 casas), 32.869
+    em ISO-8601 com fuso e 22.957 com sentinela ''0''. Converter os dois formatos.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 22957
+    pct_nulos_resumido: 41.122
+    infinitos: 0
+    zeros_completo: 22957
+    pct_linhas_zero_completo: 6.238
+- name: ltime
+  dataset_column: Ltime
+  bloco_presente: [B, C]
+  dtype_csv: "misto (object): 91.1% numerico, 8.9% ISO-8601, 32672 texto (ex.: '2025-08-20 16:27:02.544289+00:00')"
+  dtype_csv_resumido: "string ISO-8601"
+  dtype_alvo: datetime
+  unit: s (epoch Unix) ou ISO-8601
+  description: Fim do fluxo/registro
+  origem: flow
+  eve_field: flow.end
+  eve_field_status: hipotese
+  como_obter: converter
+  uso: identificador
+  observacao: 'certeza alta para flow.end. MEDIDO: Ltime == Stime em 312.584 de 344.863 linhas comparaveis
+    (todas as 312.191 epoch + 393 ISO); nas outras 32.279 (ISO) dur == Ltime - Stime exatamente. No bloco
+    epoch, Ltime NAO e fim de fluxo.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 23154
+    pct_nulos_resumido: 41.475
+    infinitos: 0
+    zeros_completo: 23154
+    pct_linhas_zero_completo: 6.292
+- name: proto
+  dataset_column: proto
+  bloco_presente: [A, B, C]
+  dtype_csv: "misto (object): 84.8% numerico, 55830 texto (ex.: 'TCP')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: string
+  unit: none
+  description: Protocolo de transporte
+  origem: flow
+  eve_field: proto
+  eve_field_status: hipotese
+  como_obter: converter
+  uso: feature
+  observacao: certeza alta (eve.json usa 'TCP', 'UDP', ...). POREM 84,8% das linhas trazem codigo numerico
+    (6, 17, 1, 2, 0) — incompativel com o eve.json. Normalizar 6->TCP, 17->UDP, 1->ICMP, 2->IGMP; 0/0.0
+    = desconhecido.
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 0
+    pct_nulos_resumido: 0.0
+    infinitos: 0
+    zeros_completo: 8424
+    pct_linhas_zero_completo: 2.289
+- name: state
+  dataset_column: state
+  bloco_presente: [B]
+  dtype_csv: "string (categorica, sentinela '0')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: string
+  unit: none
+  description: Estado do fluxo
+  origem: flow
+  eve_field: flow.state
+  eve_field_status: hipotese
+  como_obter: direto
+  uso: feature
+  observacao: 'certeza alta: new/closed/established coincidem com flow.state do Suricata (que tambem emite
+    ''bypassed'', ausente aqui). ''0'' em 91,1% e sentinela, nao estado.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 23154
+    pct_nulos_resumido: 41.475
+    infinitos: 0
+    zeros_completo: 335345
+    pct_linhas_zero_completo: 91.122
+- name: service
+  dataset_column: service
+  bloco_presente: [A, B]
+  dtype_csv: "string (categorica, sentinela '0')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: string
+  unit: none
+  description: Servico / protocolo de aplicacao
+  origem: flow
+  eve_field: app_proto
+  eve_field_status: hipotese
+  como_obter: direto
+  uso: feature
+  observacao: 'certeza alta: o vocabulario (http, dns, tls, ftp, ssh, smb, rfb, smtp, telnet, dhcp, ntp)
+    coincide com app_proto. ''failed'' e um valor de app_proto do Suricata (certeza media; confirmar versao).
+    ''0'' em 95,2% e sentinela.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 38092
+    pct_nulos_resumido: 68.233
+    infinitos: 0
+    zeros_completo: 350283
+    pct_linhas_zero_completo: 95.181
+- name: dur
+  dataset_column: dur
+  bloco_presente: [B]
+  dtype_csv: "float64 (texto)"
+  dtype_alvo: float64
+  unit: s
+  description: Duracao do fluxo
+  origem: flow
+  eve_field: flow.end - flow.start
+  eve_field_status: hipotese
+  como_obter: derivada
+  uso: feature
+  observacao: 'UNIDADE CONFIRMADA NOS DADOS: dur == Ltime - Stime em 100% das 32.672 linhas ISO (segundos).
+    NAO usar flow.age, que e inteiro. 91,2% das linhas tem dur=0; no bloco epoch (312.191 linhas) dur
+    e sempre 0 e Ltime == Stime.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 23154
+    pct_nulos_resumido: 41.475
+    infinitos: 0
+    zeros_completo: 335738
+    pct_linhas_zero_completo: 91.229
+- name: sbytes
+  dataset_column: sbytes
+  bloco_presente: [B]  # C fora: 3,30% nao zero (10.308 de 312.191), abaixo do limite de 10%
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
+  unit: bytes
+  description: Bytes origem -> destino
+  origem: flow
+  eve_field: flow.bytes_toserver
+  eve_field_status: hipotese
+  como_obter: direto
+  uso: feature
+  observacao: certeza alta. Inteiro gravado como float. 88,3% das linhas tem 0 (ausencia de fluxo ou fluxo
+    sem dados).
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 22957
+    pct_nulos_resumido: 41.122
+    infinitos: 0
+    zeros_completo: 324840
+    pct_linhas_zero_completo: 88.268
+- name: dbytes
+  dataset_column: dbytes
+  bloco_presente: [B]
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
+  unit: bytes
+  description: Bytes destino -> origem
+  origem: flow
+  eve_field: flow.bytes_toclient
+  eve_field_status: hipotese
+  como_obter: direto
+  uso: feature
+  observacao: certeza alta. 96,0% zeros; maximo 211.896.905 B (~202 MiB).
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 22957
+    pct_nulos_resumido: 41.122
+    infinitos: 0
+    zeros_completo: 353373
+    pct_linhas_zero_completo: 96.021
+- name: spkts
+  dataset_column: Spkts
+  bloco_presente: [B, C]
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
+  unit: packets
+  description: Pacotes origem -> destino
+  origem: flow
+  eve_field: flow.pkts_toserver
+  eve_field_status: hipotese
+  como_obter: direto
+  uso: feature
+  observacao: certeza alta. 6,2% zeros (linhas sem fluxo). No bloco C vale sempre 1 (registro por pacote?).
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 22957
+    pct_nulos_resumido: 41.122
+    infinitos: 0
+    zeros_completo: 22957
+    pct_linhas_zero_completo: 6.238
+- name: dpkts
+  dataset_column: Dpkts
+  bloco_presente: [B]
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
+  unit: packets
+  description: Pacotes destino -> origem
+  origem: flow
+  eve_field: flow.pkts_toclient
+  eve_field_status: hipotese
+  como_obter: direto
+  uso: feature
+  observacao: certeza alta. 96,0% zeros; no bloco C vale sempre 0.
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 22957
+    pct_nulos_resumido: 41.122
+    infinitos: 0
+    zeros_completo: 353373
+    pct_linhas_zero_completo: 96.021
+- name: sload
+  dataset_column: Sload
+  bloco_presente: [B]
+  dtype_csv: "float64 (texto)"
+  dtype_alvo: float64
+  unit: bytes/s
+  description: Taxa de bytes origem -> destino
+  origem: derivada
+  eve_field: sbytes / dur
+  eve_field_status: hipotese
+  como_obter: derivada
+  uso: feature
+  observacao: 'UNIDADE MEDIDA: Sload == sbytes/dur em 100% das 32.279 linhas com dur>0. E bytes/s, NAO
+    bits/s como no UNSW. Com dur=0, 393 linhas ficaram com Sload == sbytes (erro de divisao); as demais
+    335.345 tem 0.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 23154
+    pct_nulos_resumido: 41.475
+    infinitos: 0
+    zeros_completo: 335345
+    pct_linhas_zero_completo: 91.122
+- name: dload
+  dataset_column: Dload
+  bloco_presente: [B]
+  dtype_csv: "float64 (texto)"
+  dtype_alvo: float64
+  unit: bytes/s
+  description: Taxa de bytes destino -> origem
+  origem: derivada
+  eve_field: dbytes / dur
+  eve_field_status: hipotese
+  como_obter: derivada
+  uso: feature
+  observacao: 'UNIDADE MEDIDA: Dload == dbytes/dur em 100% das 32.279 linhas com dur>0. E bytes/s, NAO
+    bits/s. Com dur=0, Dload e sempre 0 (sem o vazamento observado em Sload).'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 23154
+    pct_nulos_resumido: 41.475
+    infinitos: 0
+    zeros_completo: 353533
+    pct_linhas_zero_completo: 96.064
+- name: smeansz
+  dataset_column: smeansz
+  bloco_presente: [B]  # C fora: 3,30% nao zero (10.308 de 312.191), abaixo do limite de 10%
+  dtype_csv: "float64 (texto)"
+  dtype_alvo: float64
+  unit: bytes/pacote
+  description: Tamanho medio dos pacotes da origem
+  origem: derivada
+  eve_field: sbytes / Spkts
+  eve_field_status: hipotese
+  como_obter: derivada
+  uso: feature
+  observacao: 'MEDIDO: == sbytes/Spkts em 100% das 345.060 linhas com Spkts>0.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 22957
+    pct_nulos_resumido: 41.122
+    infinitos: 0
+    zeros_completo: 324840
+    pct_linhas_zero_completo: 88.268
+- name: dmeansz
+  dataset_column: dmeansz
+  bloco_presente: [B]
+  dtype_csv: "float64 (texto)"
+  dtype_alvo: float64
+  unit: bytes/pacote
+  description: Tamanho medio dos pacotes do destino
+  origem: derivada
+  eve_field: dbytes / Dpkts
+  eve_field_status: hipotese
+  como_obter: derivada
+  uso: feature
+  observacao: 'MEDIDO: == dbytes/Dpkts em 100% das 14.644 linhas com Dpkts>0.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 22957
+    pct_nulos_resumido: 41.122
+    infinitos: 0
+    zeros_completo: 353373
+    pct_linhas_zero_completo: 96.021
+- name: is_sm_ips_ports
+  dataset_column: is_sm_ips_ports
+  bloco_presente: []
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
+  unit: boolean
+  description: 1 se IP e porta de origem sao iguais aos de destino
+  origem: derivada
+  eve_field: src_ip == dest_ip and src_port == dest_port
+  eve_field_status: hipotese
+  como_obter: derivada
+  uso: descartar
+  observacao: CONSTANTE 0 em todas as 368.017 linhas (zero variancia). Descartar.
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 0
+    pct_nulos_resumido: 0.0
+    infinitos: 0
+    zeros_completo: 368017
+    pct_linhas_zero_completo: 100.0
+- name: ct_state_ttl
+  dataset_column: ct_state_ttl
+  bloco_presente: [B]
+  dtype_csv: "misto (object): 91.7% numerico, 30470 texto (ex.: 'closed')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: string
+  unit: none
+  description: Estado TCP detalhado (NAO e contagem por faixa de TTL)
+  origem: desconhecida
+  eve_field: TODO
+  como_obter: nao_reproduzivel
+  uso: decidir
+  observacao: 'MEDIDO: valores 0/syn_sent/closed/fin_wait2/close_wait/established, consistentes com state
+    (new<->syn_sent, closed<->closed, established<->established/close_wait/fin_wait2). A definicao do
+    UNSW (contagem por TTL) NAO se aplica. Nao ha campo equivalente no eve.json.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 25356
+    pct_nulos_resumido: 45.42
+    infinitos: 0
+    zeros_completo: 337547
+    pct_linhas_zero_completo: 91.72
+- name: sttl
+  dataset_column: sttl
+  bloco_presente: [C]
+  dtype_csv: "misto (object): 100.0% numerico, 4 texto (ex.: '64,52')"
+  dtype_alvo: float64
+  unit: hops (TTL)
+  description: TTL da origem
+  origem: desconhecida
+  eve_field: TODO
+  como_obter: indisponivel_no_eve
+  uso: decidir
+  observacao: 'So preenchido no bloco C (128, 64, 255: valores canonicos de TTL). ZERO em 100% dos blocos
+    A e B (55.826 linhas) — por isso foi removido do resumido. O evento flow do eve.json nao expoe TTL;
+    exigiria PCAP.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: null
+    pct_nulos_resumido: null
+    infinitos: 0
+    zeros_completo: 64250
+    pct_linhas_zero_completo: 17.458
+- name: swin
+  dataset_column: swin
+  bloco_presente: [C]
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: float64
+  unit: bytes (janela TCP; provavel)
+  description: Janela TCP anunciada pela origem
+  origem: desconhecida
+  eve_field: TODO
+  como_obter: indisponivel_no_eve
+  uso: decidir
+  observacao: So no bloco C (64240, 2102272, 5888...). ZERO em A/B. Nao ha campo de janela TCP no flow
+    do eve.json; exigiria PCAP.
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: null
+    pct_nulos_resumido: null
+    infinitos: 0
+    zeros_completo: 232389
+    pct_linhas_zero_completo: 63.146
+- name: stcpb
+  dataset_column: stcpb
+  bloco_presente: [C]
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: float64
+  unit: 'TODO: confirmar'
+  description: Numero de sequencia TCP base da origem (definicao UNSW, nao confirmada)
+  origem: desconhecida
+  eve_field: TODO
+  como_obter: nao_reproduzivel
+  uso: decidir
+  observacao: ZERO em 100% dos blocos A e B. No bloco C, 83% zeros e o restante 1, 449, 77... — nao parece
+    numero de sequencia. Nao reproduzivel a partir do eve.json.
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: null
+    pct_nulos_resumido: null
+    infinitos: 0
+    zeros_completo: 314908
+    pct_linhas_zero_completo: 85.569
+- name: dtcpb
+  dataset_column: dtcpb
+  bloco_presente: [C]
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: float64
+  unit: 'TODO: confirmar'
+  description: Numero de sequencia TCP base do destino (definicao UNSW, nao confirmada)
+  origem: desconhecida
+  eve_field: TODO
+  como_obter: nao_reproduzivel
+  uso: decidir
+  observacao: ZERO em A/B. No bloco C, maximo 3.839.919.962 (~2^32), o que sugere numero de sequencia
+    em parte das linhas, mas stcpb == dtcpb em 94,4% (incompativel com seq independente). Nao reproduzivel
+    a partir do eve.json.
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: null
+    pct_nulos_resumido: null
+    infinitos: 0
+    zeros_completo: 314108
+    pct_linhas_zero_completo: 85.351
+- name: synack
+  dataset_column: synack
+  bloco_presente: [B, C]
+  dtype_csv: "misto (object): 46.2% numerico, 53.8% bool, 197892 texto (ex.: 'True')"
+  dtype_csv_resumido: "bool (texto)"
+  dtype_alvo: boolean
+  unit: none (booleano)
+  description: SYN -> SYN-ACK (no UNSW seria segundos)
+  origem: desconhecida
+  eve_field: TODO
+  como_obter: nao_reproduzivel
+  uso: decidir
+  observacao: 'MEDIDO: apenas 0, True, False; no resumido apenas True e vazio. O valor temporal foi perdido
+    — a coluna e booleana, nao segundos. Nao ha campo no eve.json; exigiria timestamps de pacote.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 25356
+    pct_nulos_resumido: 45.42
+    infinitos: 0
+    zeros_completo: 170125
+    pct_linhas_zero_completo: 46.227
+- name: ackdat
+  dataset_column: ackdat
+  bloco_presente: [B, C]
+  dtype_csv: "misto (object): 50.6% numerico, 49.4% bool, 181740 texto (ex.: 'True')"
+  dtype_csv_resumido: "bool (texto)"
+  dtype_alvo: boolean
+  unit: none (booleano)
+  description: SYN-ACK -> ACK (no UNSW seria segundos)
+  origem: desconhecida
+  eve_field: TODO
+  como_obter: nao_reproduzivel
+  uso: decidir
+  observacao: 'MEDIDO: apenas 0, True, False; no resumido apenas True e vazio. Mesmo caso de synack: booleano,
+    nao segundos.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 41508
+    pct_nulos_resumido: 74.352
+    infinitos: 0
+    zeros_completo: 186277
+    pct_linhas_zero_completo: 50.616
+- name: trans_depth
+  dataset_column: trans_depth
+  bloco_presente: [A]
+  dtype_csv: "misto (object): 94.2% numerico, 21233 texto (ex.: 'GET')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: 'TODO: definir apos corrigir a transformacao'
+  unit: 'TODO: confirmar (sem valor numerico medido)'
+  description: 'Profundidade da transacao HTTP (esperado: count)'
+  origem: http
+  eve_field: http.http_method (conteudo atual); TODO campo de profundidade
+  eve_field_status: hipotese
+  como_obter: nao_reproduzivel
+  uso: decidir
+  observacao: 'BUG: 21.233 linhas tem ''GET'', ''POST'', ''OPTIONS'', ''PROPFIND'', ''HEAD'' ou ''AHKK'';
+    todas as demais sao 0. Nenhum valor numerico > 0. O eve.json nao expoe trans_depth; a coluna, como
+    esta, contem o metodo HTTP.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 34593
+    pct_nulos_resumido: 61.966
+    infinitos: 0
+    zeros_completo: 346784
+    pct_linhas_zero_completo: 94.23
+- name: res_bdy_len
+  dataset_column: res_bdy_len
+  bloco_presente: [A]
+  dtype_csv: "misto (object): 94.2% numerico, 21233 texto (ex.: '/dav/')"
+  dtype_csv_resumido: "string"
+  dtype_alvo: 'TODO: definir apos corrigir a transformacao'
+  unit: 'TODO: confirmar (sem valor numerico medido; esperado: bytes)'
+  description: Tamanho do corpo da resposta HTTP
+  origem: http
+  eve_field: http.url (conteudo atual); http.length (candidato ao significado, certeza baixa)
+  eve_field_status: hipotese
+  como_obter: confirmar
+  uso: decidir
+  observacao: 'BUG: 21.233 linhas contem a URL (''/dav/'', ''/robots.txt'', ...); o resto e 0. Nenhum
+    valor numerico diferente de 0. Se a intencao era http.length, hoje a coluna e http.url.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 34593
+    pct_nulos_resumido: 61.966
+    infinitos: 0
+    zeros_completo: 346784
+    pct_linhas_zero_completo: 94.23
+- name: label
+  dataset_column: Label
+  bloco_presente: [A, B, C]
+  dtype_csv: "int64 (texto)"
+  dtype_alvo: int64
+  unit: none
+  description: 'Rotulo binario: 1 = ataque, 0 = benigno (fonte: descricao do Kaggle). Como foi gerado: TODO: confirmar.'
+  origem: desconhecida
+  eve_field: TODO
+  como_obter: confirmar
+  uso: rotulo
+  observacao: 'SEMANTICA CONFIRMADA PELA DESCRICAO DO KAGGLE: 1 = ataque, 0 = benigno. Totais conferem com
+    a medicao: completo 336.735/31.282; resumido 29.546/26.280 (52,9% de 1). Mas o rotulo e fortemente
+    confundido com o bloco: A=10,6%, B=82,5%, C=98,4% de 1. Nao sabemos se veio de alerta do Suricata, de
+    cenario ou de marcacao manual; tratar como verdade pode gerar vazamento. So ha classe binaria: nao
+    permite analise por tipo de ataque.'
+  nulos_infinitos:
+    nulos_completo: 0
+    pct_nulos_completo: 0.0
+    nulos_resumido: 0
+    pct_nulos_resumido: 0.0
+    infinitos: 0
+    zeros_completo: 31282
+    pct_linhas_zero_completo: 8.5
