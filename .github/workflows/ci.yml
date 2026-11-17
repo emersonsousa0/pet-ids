@@ -34,3 +34,6 @@ jobs:
 
       - name: Teste de fumaça dos scripts
         run: python -m compileall -q scripts
+
+      - name: Falha proposital para testar proteção
+        run: exit 1
