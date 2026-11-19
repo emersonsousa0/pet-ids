@@ -1,0 +1,33 @@
+services:
+  # Serviço personalizado com Suricata e tcpdump (usando o seu Dockerfile)
+  ids-analiser:
+    build: .
+    container_name: ids_suricata_tcpdump
+    command: tail -f /dev/null
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - ids-net
+
+  # Serviço do Banco de Dados PostgreSQL
+  
+  # db:
+  #   image: postgres:15
+  #   container_name: ids_postgres_local
+  #   environment:
+  #     POSTGRES_USER: darlan
+  #     POSTGRES_PASSWORD: senha123
+  #     POSTGRES_DB: idsdB
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   networks:
+  #     - ids-net
+
+# volumes:
+#   pgdata:
+
+networks:
+  ids-net:
+    driver: bridge
