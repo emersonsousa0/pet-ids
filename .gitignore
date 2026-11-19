@@ -12,3 +12,7 @@ venv/
 
 # Sistema/editor
 .DS_Store
+
+# Ambiente local
+.env
+.ruff_cache/
