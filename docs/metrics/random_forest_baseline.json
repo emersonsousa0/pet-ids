@@ -1,0 +1,78 @@
+{
+    "experimento": "baseline_random_forest",
+    "dataset": "Dataset_resumido.csv",
+    "recorte": "registros com dur preenchida",
+    "total_registros": 32672,
+    "registros_treino": 26137,
+    "registros_teste": 6535,
+    "proporcao_teste": 0.2,
+    "random_state": 42,
+    "modelo": "RandomForestClassifier",
+    "parametros": {
+        "n_estimators": 200,
+        "class_weight": "balanced",
+        "random_state": 42,
+        "n_jobs": -1
+    },
+    "variaveis_numericas": [
+        "dur",
+        "sbytes",
+        "dbytes",
+        "Sload",
+        "Dload",
+        "Spkts",
+        "Dpkts",
+        "smeansz",
+        "dmeansz"
+    ],
+    "variaveis_categoricas": [
+        "proto",
+        "state"
+    ],
+    "variaveis_excluidas": {
+        "service": "Excluída do primeiro baseline devido à alta proporção de ausências e forte associação entre ausência e classe. Será candidata a comparação.",
+        "ct_state_ttl": "Pendente de decisão no contrato.",
+        "trans_depth": "Totalmente ausente no recorte.",
+        "res_bdy_len": "Totalmente ausente no recorte.",
+        "is_sm_ips_ports": "Constante no recorte."
+    },
+    "matriz_confusao": {
+        "ordem_classes": [
+            "benigno (0)",
+            "ataque (1)"
+        ],
+        "valores": [
+            [
+                1127,
+                22
+            ],
+            [
+                85,
+                5301
+            ]
+        ],
+        "verdadeiros_negativos": 1127,
+        "falsos_positivos": 22,
+        "falsos_negativos": 85,
+        "verdadeiros_positivos": 5301
+    },
+    "accuracy": 0.9836266258607498,
+    "metricas_por_classe": {
+        "0": {
+            "nome": "benigno",
+            "precision": 0.9298679867986799,
+            "recall": 0.9808529155787642,
+            "f1_score": 0.9546802202456586,
+            "pr_auc": 0.9922389069060753,
+            "support": 1149
+        },
+        "1": {
+            "nome": "ataque",
+            "precision": 0.9958669922975766,
+            "recall": 0.9842183438544374,
+            "f1_score": 0.9900084041460454,
+            "pr_auc": 0.9993445125741786,
+            "support": 5386
+        }
+    }
+}
