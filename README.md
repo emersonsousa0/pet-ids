@@ -19,7 +19,30 @@ O projeto utiliza Git e GitHub para controle de versão e colaboração entre os
 
 As contribuições devem seguir as orientações descritas no arquivo `CONTRIBUTING.md`.
 
-Principais diretórios e arquivos:
+## Estrutura do repositório
+
+```
+.github/workflows/   CI (GitHub Actions)
+docs/                contratos, ADRs, diagramas e relatórios
+lab/                 laboratório isolado (scripts de ataque e coleta)
+ml/                  código de Machine Learning
+services/            serviços do pipeline
+  capture/           captura de tráfego -> Redis Streams
+  suricata/          Suricata em container (regras ET Open)
+  inference/         serviço de inferência
+  alerts/            serviço de alertas
+  postgres/          banco e migrações
+  grafana/           dashboards
+  prometheus/        métricas
+  vps/               reservado (VPS adiada)
+scripts/             scripts de treinamento, experimentação e inspeção do dataset
+data/                dados locais (fora do Git; só o README é versionado)
+models/              modelos treinados, apenas local (fora do Git)
+```
+
+Cada pasta tem um README curto com seu propósito. Dados pesados e PCAPs nunca são versionados.
+
+Principais diretórios e arquivos de documentação:
 
 | Caminho | Descrição |
 |---|---|
