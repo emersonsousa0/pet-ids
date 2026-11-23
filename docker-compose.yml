@@ -1,33 +1,54 @@
 services:
-  # Serviço personalizado com Suricata e tcpdump (usando o seu Dockerfile)
-  ids-analiser:
-    build: .
-    container_name: ids_suricata_tcpdump
-    command: tail -f /dev/null
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ids}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ids_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-ids}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ids-sensor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["tail", "-f", "/dev/null"]
     cap_add:
       - NET_ADMIN
-    networks:
-      - ids-net
+      - NET_RAW
+    volumes:
+      - ./suricata-logs:/var/log/suricata
+      - ./captures:/captures
+    working_dir: /app
 
-  # Serviço do Banco de Dados PostgreSQL
-  
-  # db:
-  #   image: postgres:15
-  #   container_name: ids_postgres_local
-  #   environment:
-  #     POSTGRES_USER: darlan
-  #     POSTGRES_PASSWORD: senha123
-  #     POSTGRES_DB: idsdB
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - pgdata:/var/lib/postgresql/data
-  #   networks:
-  #     - ids-net
+  tools:
+    image: ghcr.io/astral-sh/ruff:0.8.6
+    profiles: ["tools"]
+    environment:
+      RUFF_CACHE_DIR: /tmp/.ruff_cache
+    volumes:
+      - .:/repo
+    working_dir: /repo
 
-# volumes:
-#   pgdata:
-
-networks:
-  ids-net:
-    driver: bridge
+volumes:
+  pgdata:
+  redisdata:
