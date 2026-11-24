@@ -12,3 +12,13 @@ venv/
 
 # Sistema/editor
 .DS_Store
+
+# Ambiente local
+.ruff_cache/
+# Modelos treinados (artefatos locais)
+models/
+
+# Variáveis de ambiente e credenciais
+.env
+.env.*
+!.env.example

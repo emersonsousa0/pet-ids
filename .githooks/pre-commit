@@ -1,0 +1,7 @@
+#!/bin/sh
+docker info >/dev/null 2>&1 || {
+  echo "Docker nao esta rodando. Inicie o Docker ou use 'git commit --no-verify'."
+  exit 1
+}
+docker compose run --rm -T tools check . || exit 1
+docker compose run --rm -T tools format --check . || exit 1
