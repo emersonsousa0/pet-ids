@@ -136,6 +136,31 @@ O diretório `models/` está incluído no `.gitignore`, portanto o modelo binár
 
 **Observação:** os resultados representam um baseline experimental. A avaliação utiliza uma divisão aleatória do mesmo conjunto de dados e ainda precisa ser complementada com testes em dados independentes antes de qualquer aplicação em ambiente real.
 
+## Ambiente de desenvolvimento
+
+Pré-requisitos: Git e Docker (Docker Desktop no Windows, com Compose v2 recente).
+
+Linux, macOS, WSL ou Git Bash com make:
+
+```bash
+make up
+```
+
+Windows (PowerShell) sem make:
+
+```powershell
+git config core.hooksPath .githooks
+docker compose up -d --wait
+```
+
+Para conferir, `docker compose ps` deve mostrar PostgreSQL e Redis como `healthy`.
+
+Outros comandos: `make down` (parar), `make reset` (parar e apagar os dados), `make logs` e `make lint`.
+
+Os valores padrão (usuário, senha e portas) ficam no `docker-compose.yml`. Para alterá-los, copie `.env.example` para `.env`.
+
+O hook de pre-commit executa o Ruff dentro de um container e exige o Docker em execução. Para corrigir problemas apontados: `docker compose run --rm tools check --fix .` e `docker compose run --rm tools format .`.
+
 ## Contribuição
 
 As alterações devem ser realizadas em branches separadas e submetidas por Pull Requests, seguindo as regras de revisão e aprovação configuradas no repositório.
