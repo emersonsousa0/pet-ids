@@ -22,3 +22,7 @@ models/
 .env
 .env.*
 !.env.example
+data/*
+!data/README.md
+*.pcap
+*.pcapng
