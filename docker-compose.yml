@@ -1,3 +1,4 @@
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -26,6 +27,19 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  ids-sensor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["tail", "-f", "/dev/null"]
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./suricata-logs:/var/log/suricata
+      - ./captures:/captures
+    working_dir: /app
 
   tools:
     image: ghcr.io/astral-sh/ruff:0.8.6
