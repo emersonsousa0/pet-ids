@@ -7,7 +7,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 COLUNAS_FLUXO = ["srcip", "sport", "dstip", "dsport", "proto"]
 
 FEATURES = [
